@@ -1,0 +1,40 @@
+# Python bytecode
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.pyc
+
+# Virtual environment
+env/
+venv/
+ENV/
+
+# gRPC generated files (DO NOT COMMIT)
+model_pb2.py
+model_pb2_grpc.py
+
+# Model weights (comment this line if you want to include .pt files)
+*.pt
+
+# Logs
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Python cache folders
+*.cache/
+.cache/
+
+# Ultralytics cache folder (inside project, not global)
+ultralytics/
+
+# Temporary files
+*.tmp
+tmp/
+
+# Large binaries
+*.zip
+*.tar.gz

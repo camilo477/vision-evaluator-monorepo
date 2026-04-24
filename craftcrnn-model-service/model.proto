@@ -1,0 +1,55 @@
+syntax = "proto3";
+
+package model;
+
+service ModelService {
+  rpc ProcessImage (ImageRequest) returns (ModelResponse);
+}
+
+message ImageRequest {
+  bytes imageBuffer = 1;
+  float minConfidence = 2;
+}
+
+message Detection {
+  string className = 1;
+  float confidence = 2;
+
+  float x_min = 3;
+  float y_min = 4;
+  float x_max = 5;
+  float y_max = 6;
+
+  float x_center = 7;
+  float y_center = 8;
+  float width = 9;
+  float height = 10;
+
+  bool normalized = 11;
+}
+
+message ModelInfo {
+  string modelName = 1;
+  string modelVersion = 2;
+  string device = 3;
+}
+
+message ImageInfo {
+  int32 width = 1;
+  int32 height = 2;
+}
+
+message PerformanceMetrics {
+  double preprocessMs = 1;
+  double inferenceMs = 2;
+  double postprocessMs = 3;
+  double totalMs = 4;
+}
+
+message ModelResponse {
+  ModelInfo modelInfo = 1;
+  ImageInfo imageInfo = 2;
+  PerformanceMetrics metrics = 3;
+
+  repeated Detection detections = 4;
+}

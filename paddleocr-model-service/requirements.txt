@@ -1,0 +1,6 @@
+grpcio
+grpcio-tools
+numpy
+opencv-python-headless
+paddleocr
+paddlepaddle

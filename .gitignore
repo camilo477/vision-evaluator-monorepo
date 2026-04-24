@@ -1,0 +1,39 @@
+# Python
+**/env/
+**/venv/
+**/__pycache__/
+**/*.pyc
+
+# Node/Nest
+**/node_modules/
+eco-api/dist/
+eco-api/coverage/
+
+# Flutter
+frontend/vision_evaluator/.dart_tool/
+frontend/vision_evaluator/build/
+frontend/vision_evaluator/.flutter-plugins
+frontend/vision_evaluator/.flutter-plugins-dependencies
+
+# Android/Gradle
+**/.gradle/
+**/local.properties
+
+# Secrets
+.env
+.env.*
+**/.env
+**/.env.*
+
+# Model weights
+*.pt
+*.pth
+*.onnx
+*.tflite
+*.h5
+*.keras
+
+# OS/editor
+.DS_Store
+.idea/
+.vscode/
