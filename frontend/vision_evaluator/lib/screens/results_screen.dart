@@ -26,6 +26,13 @@ class ResultsScreen extends StatefulWidget {
 }
 
 class _ResultsScreenState extends State<ResultsScreen> {
+  static const _textModelNames = {
+    'PaddleOCR',
+    'EasyOCR',
+    'TesseractOCR',
+    'CRAFTCRNN',
+  };
+
   static const _lightingOptions = [
     'Luz optima',
     'Baja iluminacion',
@@ -42,7 +49,6 @@ class _ResultsScreenState extends State<ResultsScreen> {
 
   final List<Map<String, dynamic>> partialResults = [];
   final List<_EvaluationHistoryItem> history = [];
-  final TextEditingController notesController = TextEditingController();
   final TextEditingController groundTruthController = TextEditingController();
 
   Map<String, dynamic>? finalResult;
@@ -62,7 +68,6 @@ class _ResultsScreenState extends State<ResultsScreen> {
   void dispose() {
     socket?.disconnect();
     socket?.close();
-    notesController.dispose();
     groundTruthController.dispose();
     super.dispose();
   }
@@ -136,9 +141,6 @@ class _ResultsScreenState extends State<ResultsScreen> {
     'Iluminacion': lightingCondition,
     'Distancia': distanceCondition,
     'Complejidad': complexityCondition,
-    'Notas': notesController.text.trim().isEmpty
-        ? 'Sin notas'
-        : notesController.text.trim(),
   };
 
   List<String> get _groundTruthLabels => groundTruthController.text
@@ -323,6 +325,83 @@ class _ResultsScreenState extends State<ResultsScreen> {
     return _listOf(result['detections']).length;
   }
 
+  bool _isTextModelName(String modelName) {
+    if (_textModelNames.contains(modelName)) return true;
+
+    final normalized = modelName.toLowerCase();
+    return normalized.contains('ocr') ||
+        normalized.contains('tesseract') ||
+        normalized.contains('craft');
+  }
+
+  String _labelFromDetection(
+    Map<String, dynamic> detection, {
+    String fallback = 'Objeto',
+  }) {
+    final candidates = [
+      detection['className'],
+      detection['text'],
+      detection['label'],
+      detection['value'],
+      detection['data'],
+    ];
+
+    for (final candidate in candidates) {
+      final label = candidate?.toString().trim();
+      if (label != null && label.isNotEmpty) return label;
+    }
+
+    return fallback;
+  }
+
+  List<String> _wordsFromText(String text) {
+    return text
+        .replaceAll(RegExp(r'[\r\n\t]+'), ' ')
+        .split(RegExp(r'\s+'))
+        .map(
+          (word) => word
+              .trim()
+              .replaceAll(RegExp(r'^[,.;:!?¿¡"()\[\]{}]+'), '')
+              .replaceAll(RegExp(r'[,.;:!?¿¡"()\[\]{}]+$'), ''),
+        )
+        .where((word) => word.isNotEmpty)
+        .toList();
+  }
+
+  List<_DetectedTextByModel> _detectedTextByModel() {
+    final textResults = <_DetectedTextByModel>[];
+
+    for (final item in partialResults) {
+      final modelName = item['model']?.toString() ?? 'Modelo';
+      if (!_isTextModelName(modelName)) continue;
+
+      final result = _mapOf(item['result']);
+      final error = result['error']?.toString();
+      final detections = _listOf(result['detections']);
+      final words = <String>[];
+      final seen = <String>{};
+
+      for (final detection in detections) {
+        final label = _labelFromDetection(
+          _mapOf(detection),
+          fallback: '',
+        ).trim();
+        if (label.isEmpty || label.toLowerCase() == 'unknown') continue;
+
+        for (final word in _wordsFromText(label)) {
+          final normalized = word.toLowerCase();
+          if (seen.add(normalized)) words.add(word);
+        }
+      }
+
+      textResults.add(
+        _DetectedTextByModel(modelName: modelName, words: words, error: error),
+      );
+    }
+
+    return textResults;
+  }
+
   num _confidenceValueFromResult(Map<String, dynamic> item) {
     final result = _mapOf(item['result']);
     if (result['accuracy'] != null) return _toNum(result['accuracy']);
@@ -457,7 +536,7 @@ class _ResultsScreenState extends State<ResultsScreen> {
       boxes.add(
         _DetectedBox(
           modelName: modelName,
-          label: map['className']?.toString() ?? 'Objeto',
+          label: _labelFromDetection(map),
           confidence: _toNum(map['confidence']).toDouble(),
           rect: Rect.fromLTRB(xMin, yMin, xMax, yMax),
         ),
@@ -624,6 +703,10 @@ class _ResultsScreenState extends State<ResultsScreen> {
                         ),
                         const SizedBox(height: 16),
                         _buildImagePreview(),
+                        if (_detectedTextByModel().isNotEmpty) ...[
+                          const SizedBox(height: 16),
+                          _buildDetectedTextPanel(theme),
+                        ],
                         const SizedBox(height: 16),
                         Wrap(
                           spacing: 8,
@@ -707,17 +790,6 @@ class _ResultsScreenState extends State<ResultsScreen> {
             decoration: const InputDecoration(
               labelText: 'Ground truth por etiquetas',
               hintText: 'Ejemplo: persona, carro, botella',
-              border: OutlineInputBorder(),
-            ),
-          ),
-          const SizedBox(height: 14),
-          TextField(
-            controller: notesController,
-            minLines: 2,
-            maxLines: 4,
-            decoration: const InputDecoration(
-              labelText: 'Notas del escenario',
-              hintText: 'Ejemplo: interior, fondo complejo, objeto lejano',
               border: OutlineInputBorder(),
             ),
           ),
@@ -871,6 +943,35 @@ class _ResultsScreenState extends State<ResultsScreen> {
                   )
                   .toList(),
             ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDetectedTextPanel(ThemeData theme) {
+    final textResults = _detectedTextByModel();
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: _softPanelDecoration(),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Palabras detectadas por modelo',
+            style: theme.textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.w800,
+              color: const Color(0xFF0F172A),
+            ),
+          ),
+          const SizedBox(height: 12),
+          ...textResults.map(
+            (item) => Padding(
+              padding: const EdgeInsets.only(bottom: 10),
+              child: _DetectedTextRow(item: item),
+            ),
+          ),
         ],
       ),
     );
@@ -1282,6 +1383,72 @@ class _ModelResultCard extends StatelessWidget {
   }
 }
 
+class _DetectedTextRow extends StatelessWidget {
+  final _DetectedTextByModel item;
+
+  const _DetectedTextRow({required this.item});
+
+  @override
+  Widget build(BuildContext context) {
+    final error = item.error;
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            item.modelName,
+            style: const TextStyle(
+              color: Color(0xFF0F172A),
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+          const SizedBox(height: 10),
+          if (error != null && error.isNotEmpty)
+            Text(
+              error,
+              style: const TextStyle(
+                color: Color(0xFFB91C1C),
+                fontWeight: FontWeight.w700,
+              ),
+            )
+          else if (item.words.isEmpty)
+            const Text(
+              'Sin palabras detectadas',
+              style: TextStyle(
+                color: Color(0xFF64748B),
+                fontWeight: FontWeight.w600,
+              ),
+            )
+          else
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: item.words
+                  .map(
+                    (word) => Chip(
+                      label: ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 240),
+                        child: Text(word, overflow: TextOverflow.ellipsis),
+                      ),
+                      visualDensity: VisualDensity.compact,
+                    ),
+                  )
+                  .toList(),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
 class _MetricBadge extends StatelessWidget {
   final String label;
   final String value;
@@ -1573,8 +1740,7 @@ class _BoundingBoxPainter extends CustomPainter {
 
       canvas.drawRect(rect, paint);
 
-      final label =
-          '${box.label} ${(box.confidence * 100).toStringAsFixed(1)}%';
+      final label = box.label;
       final textPainter = TextPainter(
         text: TextSpan(
           text: label,
@@ -1585,6 +1751,7 @@ class _BoundingBoxPainter extends CustomPainter {
           ),
         ),
         maxLines: 1,
+        ellipsis: '...',
         textDirection: TextDirection.ltr,
       )..layout(maxWidth: math.max(80, rect.width));
 
@@ -1629,6 +1796,18 @@ class _ImageInfo {
   final double height;
 
   const _ImageInfo({required this.width, required this.height});
+}
+
+class _DetectedTextByModel {
+  final String modelName;
+  final List<String> words;
+  final String? error;
+
+  const _DetectedTextByModel({
+    required this.modelName,
+    required this.words,
+    this.error,
+  });
 }
 
 class _DetectedBox {

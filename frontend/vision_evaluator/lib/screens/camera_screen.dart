@@ -56,9 +56,13 @@ class _CameraScreenState extends State<CameraScreen> {
     }
 
     final bytes = await file.readAsBytes();
-    widget.onPictureTaken(null, bytes);
+    final onPictureTaken = widget.onPictureTaken;
 
-    if (mounted) Navigator.pop(context);
+    if (!mounted) return;
+    Navigator.pop(context);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      onPictureTaken(null, bytes);
+    });
   }
 
   Future<void> takePicture() async {
@@ -70,15 +74,17 @@ class _CameraScreenState extends State<CameraScreen> {
 
     try {
       final XFile file = await controller!.takePicture();
-      widget.onPictureTaken(File(file.path), null);
+      final onPictureTaken = widget.onPictureTaken;
 
       if (mounted) {
         Navigator.pop(context);
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          onPictureTaken(File(file.path), null);
+        });
       }
-    } finally {
-      if (mounted) {
-        setState(() => isCapturing = false);
-      }
+    } catch (_) {
+      if (mounted) setState(() => isCapturing = false);
+      rethrow;
     }
   }
 

@@ -20,7 +20,11 @@ def _bbox_from_points(points):
 class ModelService(model_pb2_grpc.ModelServiceServicer):
     def __init__(self):
         print("[MODEL] Loading PaddleOCR...")
-        self.ocr = PaddleOCR(use_angle_cls=True, lang="en")
+        self.ocr = PaddleOCR(
+            use_textline_orientation=True,
+            lang="en",
+            enable_mkldnn=False,
+        )
         self.device = "cpu"
         print("[MODEL] PaddleOCR loaded")
 
@@ -40,30 +44,11 @@ class ModelService(model_pb2_grpc.ModelServiceServicer):
         h, w = img.shape[:2]
 
         inf_start = time.time()
-        result = self.ocr.ocr(img, cls=True)
+        result = self.ocr.predict(img, use_textline_orientation=True)
         inf_end = time.time()
 
         post_start = time.time()
-        detections = []
-        lines = result[0] if result and result[0] else []
-
-        for line in lines:
-            points = line[0]
-            text, confidence = line[1]
-            x_min, y_min, x_max, y_max = _bbox_from_points(points)
-            detections.append(model_pb2.Detection(
-                className=str(text),
-                confidence=float(confidence),
-                x_min=x_min,
-                y_min=y_min,
-                x_max=x_max,
-                y_max=y_max,
-                x_center=(x_min + x_max) / 2,
-                y_center=(y_min + y_max) / 2,
-                width=x_max - x_min,
-                height=y_max - y_min,
-                normalized=False,
-            ))
+        detections = self._parse_result(result)
         post_end = time.time()
         total_end = time.time()
 
@@ -81,6 +66,55 @@ class ModelService(model_pb2_grpc.ModelServiceServicer):
                 totalMs=(total_end - total_start) * 1000,
             ),
             detections=detections,
+        )
+
+    def _parse_result(self, result):
+        detections = []
+
+        for page in result or []:
+            if isinstance(page, dict):
+                texts = page.get("rec_texts") or []
+                scores = page.get("rec_scores") or []
+                polygons = page.get("rec_polys") or page.get("dt_polys") or []
+                boxes = page.get("rec_boxes")
+
+                for index, text in enumerate(texts):
+                    if not str(text).strip():
+                        continue
+
+                    confidence = float(scores[index]) if index < len(scores) else 0.0
+                    if index < len(polygons):
+                        x_min, y_min, x_max, y_max = _bbox_from_points(polygons[index])
+                    elif boxes is not None and index < len(boxes):
+                        x_min, y_min, x_max, y_max = [float(v) for v in boxes[index]]
+                    else:
+                        x_min = y_min = x_max = y_max = 0.0
+
+                    detections.append(self._detection(str(text), confidence, x_min, y_min, x_max, y_max))
+                continue
+
+            lines = page if page else []
+            for line in lines:
+                points = line[0]
+                text, confidence = line[1]
+                x_min, y_min, x_max, y_max = _bbox_from_points(points)
+                detections.append(self._detection(str(text), float(confidence), x_min, y_min, x_max, y_max))
+
+        return detections
+
+    def _detection(self, text, confidence, x_min, y_min, x_max, y_max):
+        return model_pb2.Detection(
+            className=text,
+            confidence=confidence,
+            x_min=x_min,
+            y_min=y_min,
+            x_max=x_max,
+            y_max=y_max,
+            x_center=(x_min + x_max) / 2,
+            y_center=(y_min + y_max) / 2,
+            width=x_max - x_min,
+            height=y_max - y_min,
+            normalized=False,
         )
 
 
