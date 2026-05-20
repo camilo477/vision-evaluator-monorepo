@@ -2,18 +2,30 @@ import io
 import time
 from concurrent import futures
 
+import cv2
 import grpc
 import model_pb2
 import model_pb2_grpc
+import numpy as np
 from PIL import Image
-from pyzbar.pyzbar import decode
+
+try:
+    from pyzbar.pyzbar import decode as zbar_decode
+    ZBAR_IMPORT_ERROR = None
+except ImportError as exc:
+    zbar_decode = None
+    ZBAR_IMPORT_ERROR = exc
 
 
 class ModelService(model_pb2_grpc.ModelServiceServicer):
     def __init__(self):
         print("[MODEL] Loading ZBar...")
+        self.qr_detector = cv2.QRCodeDetector()
         self.device = "cpu"
-        print("[MODEL] ZBar ready")
+        if zbar_decode is None:
+            print(f"[MODEL] ZBar unavailable, using OpenCV QR fallback: {ZBAR_IMPORT_ERROR}")
+        else:
+            print("[MODEL] ZBar ready")
 
     def ProcessImage(self, request, context):
         total_start = time.time()
@@ -29,7 +41,15 @@ class ModelService(model_pb2_grpc.ModelServiceServicer):
         pre_end = time.time()
 
         inf_start = time.time()
-        symbols = decode(image)
+        symbols = zbar_decode(image) if zbar_decode is not None else []
+        fallback_codes = []
+        if zbar_decode is None:
+            img = np.array(image)
+            ok, decoded_info, points, _ = self.qr_detector.detectAndDecodeMulti(img)
+            if ok and points is not None:
+                for text, polygon in zip(decoded_info, points):
+                    if text:
+                        fallback_codes.append(("QR_CODE", text, polygon))
         inf_end = time.time()
 
         post_start = time.time()
@@ -55,13 +75,33 @@ class ModelService(model_pb2_grpc.ModelServiceServicer):
                 height=box_h,
                 normalized=False,
             ))
+        for code_type, text, polygon in fallback_codes:
+            xs = [float(p[0]) for p in polygon]
+            ys = [float(p[1]) for p in polygon]
+            x_min, x_max = min(xs), max(xs)
+            y_min, y_max = min(ys), max(ys)
+            box_w = x_max - x_min
+            box_h = y_max - y_min
+            detections.append(model_pb2.Detection(
+                className=f"{code_type}: {text}",
+                confidence=1.0,
+                x_min=x_min,
+                y_min=y_min,
+                x_max=x_max,
+                y_max=y_max,
+                x_center=x_min + box_w / 2,
+                y_center=y_min + box_h / 2,
+                width=box_w,
+                height=box_h,
+                normalized=False,
+            ))
         post_end = time.time()
         total_end = time.time()
 
         return model_pb2.ModelResponse(
             modelInfo=model_pb2.ModelInfo(
                 modelName="ZBar",
-                modelVersion="pyzbar",
+                modelVersion="pyzbar" if zbar_decode is not None else "opencv-qr-fallback",
                 device=self.device,
             ),
             imageInfo=model_pb2.ImageInfo(width=w, height=h),

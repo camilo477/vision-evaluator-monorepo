@@ -73,7 +73,7 @@ class _HeroSection extends StatelessWidget {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
           decoration: BoxDecoration(
-            color: const Color(0xFF0F172A).withOpacity(0.85),
+            color: const Color(0xFF0F172A).withValues(alpha: 0.85),
             borderRadius: BorderRadius.circular(999),
             border: Border.all(color: const Color(0xFF334155)),
           ),
@@ -373,10 +373,10 @@ class _AppBackground extends StatelessWidget {
             height: 260,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: const Color(0xFF4F46E5).withOpacity(0.20),
+              color: const Color(0xFF4F46E5).withValues(alpha: 0.20),
               boxShadow: [
                 BoxShadow(
-                  color: const Color(0xFF4F46E5).withOpacity(0.22),
+                  color: const Color(0xFF4F46E5).withValues(alpha: 0.22),
                   blurRadius: 120,
                   spreadRadius: 40,
                 ),
@@ -392,10 +392,10 @@ class _AppBackground extends StatelessWidget {
             height: 240,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: const Color(0xFF06B6D4).withOpacity(0.12),
+              color: const Color(0xFF06B6D4).withValues(alpha: 0.12),
               boxShadow: [
                 BoxShadow(
-                  color: const Color(0xFF06B6D4).withOpacity(0.18),
+                  color: const Color(0xFF06B6D4).withValues(alpha: 0.18),
                   blurRadius: 120,
                   spreadRadius: 30,
                 ),

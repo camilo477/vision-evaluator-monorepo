@@ -3,6 +3,7 @@
 **/venv/
 **/__pycache__/
 **/*.pyc
+**/.cache/
 
 # Node/Nest
 **/node_modules/
@@ -12,6 +13,7 @@ eco-api/coverage/
 # Flutter
 frontend/vision_evaluator/.dart_tool/
 frontend/vision_evaluator/build/
+**/build/
 frontend/vision_evaluator/.flutter-plugins
 frontend/vision_evaluator/.flutter-plugins-dependencies
 

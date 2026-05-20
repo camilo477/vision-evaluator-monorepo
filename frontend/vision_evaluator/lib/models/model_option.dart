@@ -30,6 +30,8 @@ class ModelOption {
         return 'Detector de objetos eficiente con arquitectura EfficientDet-D0.';
       case 'MobileNet':
         return 'Clasificador ImageNet liviano para reconocer la clase principal.';
+      case 'ResNet50':
+        return 'Clasificador ImageNet profundo para comparar resultados de clasificacion.';
       case 'PaddleOCR':
         return 'OCR robusto para detectar y leer texto en imagenes.';
       case 'EasyOCR':
@@ -45,8 +47,12 @@ class ModelOption {
       case 'pybarcode':
         return 'Lector compatible para comparar codigos usando OpenCV.';
       default:
-        if (type == 'TEXT') return 'Modelo disponible para reconocimiento de texto.';
-        if (type == 'CODES') return 'Modelo disponible para lectura de codigos.';
+        if (type == 'TEXT') {
+          return 'Modelo disponible para reconocimiento de texto.';
+        }
+        if (type == 'CODES') {
+          return 'Modelo disponible para lectura de codigos.';
+        }
         return 'Modelo disponible para analisis de objetos.';
     }
   }

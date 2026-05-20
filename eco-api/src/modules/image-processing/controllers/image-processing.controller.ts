@@ -1,17 +1,16 @@
 import {
+  BadRequestException,
   Controller,
   Post,
   Body,
   UploadedFile,
   UseInterceptors,
-  Req,
   Get,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ImageService } from '../services/images.service';
 import { ProcessImageDTO } from '../dto/image-upload.dto';
 import { ApiBody, ApiConsumes, ApiTags } from '@nestjs/swagger';
-import { Request } from 'express';
 
 @ApiTags('Image Processing')
 @Controller('image')
@@ -19,12 +18,12 @@ export class ImageController {
   constructor(private readonly imageService: ImageService) {}
 
   @Get('test')
-  async test() {
+  async test(): Promise<unknown> {
     return this.imageService.testModelA();
   }
 
   @Get('models')
-  async getModels() {
+  getModels() {
     return this.imageService.getModels();
   }
 
@@ -37,10 +36,45 @@ export class ImageController {
   })
   async processImage(
     @UploadedFile() file: Express.Multer.File,
-    @Req() req: Request,
+    @Body() body: ProcessImageDTO,
   ) {
-    const { clientId, models }: ProcessImageDTO = req.body;
-    const modelsArray = models.split(',').map((s) => s.trim());
-    return this.imageService.processImage(file.buffer, clientId, modelsArray);
+    if (!file?.buffer) {
+      throw new BadRequestException('Image file is required.');
+    }
+
+    if (!body.clientId) {
+      throw new BadRequestException('clientId is required.');
+    }
+
+    if (!body.models) {
+      throw new BadRequestException('At least one model is required.');
+    }
+
+    const modelsArray = body.models
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean);
+
+    if (modelsArray.length === 0) {
+      throw new BadRequestException('At least one model is required.');
+    }
+
+    return this.imageService.processImage(
+      file.buffer,
+      body.clientId,
+      modelsArray,
+      this.parseCsvList(body.groundTruth),
+    );
+  }
+
+  private parseCsvList(value?: string): string[] {
+    if (!value) {
+      return [];
+    }
+
+    return value
+      .split(',')
+      .map((item) => item.trim())
+      .filter(Boolean);
   }
 }

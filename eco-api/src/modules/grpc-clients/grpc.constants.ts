@@ -65,6 +65,15 @@ export const Models: ModelPropertires[] = [
     },
   },
   {
+    name: 'ResNet50',
+    recognizes: RecognitionTypes.OBJECTS,
+    transport: Transport.GRPC,
+    options: {
+      ...sharedOptions,
+      url: 'localhost:50062',
+    },
+  },
+  {
     name: 'PaddleOCR',
     recognizes: RecognitionTypes.TEXT,
     transport: Transport.GRPC,

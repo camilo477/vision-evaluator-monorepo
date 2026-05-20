@@ -9,4 +9,4 @@ const envVars = {
   PORT: +(process.env.PORT ?? 3000),
 };
 
-export const { PORT } = envVars
+export const { PORT } = envVars;

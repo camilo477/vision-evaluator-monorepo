@@ -12,7 +12,11 @@ class ModelService(model_pb2_grpc.ModelServiceServicer):
     def __init__(self):
         print("[MODEL] Loading YOLOv5n...")
         self.model = torch.hub.load(
-            "ultralytics/yolov5", "yolov5n", pretrained=True)
+            "ultralytics/yolov5",
+            "yolov5n",
+            pretrained=True,
+            trust_repo=True,
+        )
         self.device = "cpu"
         print("[MODEL] YOLOv5n loaded on CPU")
 

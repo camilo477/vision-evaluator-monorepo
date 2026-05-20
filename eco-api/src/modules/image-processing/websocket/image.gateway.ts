@@ -1,7 +1,6 @@
 import {
   WebSocketGateway,
   WebSocketServer,
-  SubscribeMessage,
   OnGatewayConnection,
   OnGatewayDisconnect,
 } from '@nestjs/websockets';
@@ -27,7 +26,7 @@ export class ImageGateway implements OnGatewayConnection, OnGatewayDisconnect {
   }
 
   // Emit result from models
-  sendPartialResult(clientId: string, modelName: string, result: any) {
+  sendPartialResult(clientId: string, modelName: string, result: unknown) {
     const client = this.clients.get(clientId);
     if (client) {
       client.emit('modelResult', { model: modelName, result });
@@ -35,7 +34,7 @@ export class ImageGateway implements OnGatewayConnection, OnGatewayDisconnect {
   }
 
   // Emit final comparison
-  sendFinalResult(clientId: string, comparison: any) {
+  sendFinalResult(clientId: string, comparison: unknown) {
     const client = this.clients.get(clientId);
     if (client) {
       client.emit('finalResult', comparison);

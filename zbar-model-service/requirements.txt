@@ -1,4 +1,6 @@
 grpcio
 grpcio-tools
+numpy
+opencv-python-headless
 pillow
 pyzbar

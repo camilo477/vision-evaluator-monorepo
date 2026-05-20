@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 
-import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/foundation.dart' show debugPrint, kIsWeb;
 import 'package:http/http.dart' as http;
 
 import '../models/model_option.dart';
@@ -12,13 +12,17 @@ class ApiService {
   // - Emulador Android: http://10.0.2.2:3000
   // - Celular físico: http://TU_IP_LOCAL:3000
   // - Web / Linux: http://localhost:3000
-  static const String baseUrl = "http://192.168.10.48:3000";
+  static const String baseUrl = String.fromEnvironment(
+    'API_BASE_URL',
+    defaultValue: 'http://192.168.10.48:3000',
+  );
 
   static const List<Map<String, String>> expectedModels = [
     {'name': 'YOLOv8n', 'type': 'OBJECTS'},
     {'name': 'YOLOv5n', 'type': 'OBJECTS'},
     {'name': 'EfficientDet', 'type': 'OBJECTS'},
     {'name': 'MobileNet', 'type': 'OBJECTS'},
+    {'name': 'ResNet50', 'type': 'OBJECTS'},
     {'name': 'PaddleOCR', 'type': 'TEXT'},
     {'name': 'EasyOCR', 'type': 'TEXT'},
     {'name': 'TesseractOCR', 'type': 'TEXT'},
@@ -60,6 +64,7 @@ class ApiService {
     File? imageFile,
     Uint8List? imageBytes,
     required String clientId,
+    List<String> groundTruthLabels = const [],
   }) async {
     final url = Uri.parse("$baseUrl/image/process");
 
@@ -67,6 +72,9 @@ class ApiService {
 
     request.fields["clientId"] = clientId;
     request.fields["models"] = models.join(",");
+    if (groundTruthLabels.isNotEmpty) {
+      request.fields["groundTruth"] = groundTruthLabels.join(",");
+    }
 
     if (kIsWeb) {
       if (imageBytes == null) {
@@ -101,7 +109,7 @@ class ApiService {
       return json.decode(response.body);
     }
 
-    print("ERROR BACKEND → ${response.body}");
+    debugPrint("ERROR BACKEND -> ${response.body}");
     throw Exception("Error processing image: ${response.statusCode}");
   }
 }

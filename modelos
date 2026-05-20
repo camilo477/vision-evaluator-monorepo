@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+script_path="${BASH_SOURCE[0]}"
+
+while [ -L "$script_path" ]; do
+  script_dir="$(cd -P "$(dirname "$script_path")" && pwd)"
+  script_path="$(readlink "$script_path")"
+  if [[ "$script_path" != /* ]]; then
+    script_path="$script_dir/$script_path"
+  fi
+done
+
+project_dir="$(cd -P "$(dirname "$script_path")" && pwd)"
+
+if [ "${1:-}" = "--check" ]; then
+  echo "$project_dir"
+  exit 0
+fi
+
+cd "$project_dir"
+exec "$project_dir/scripts/run_all_model_services.sh"
