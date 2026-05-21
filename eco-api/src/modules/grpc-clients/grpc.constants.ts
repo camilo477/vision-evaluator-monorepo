@@ -27,6 +27,9 @@ const sharedOptions = {
   protoPath: join(__dirname, 'proto/model.proto'),
 };
 
+const modelUrl = (envName: string, fallback: string) =>
+  process.env[envName] ?? fallback;
+
 export const Models: ModelPropertires[] = [
   {
     name: 'YOLOv8n',
@@ -34,7 +37,7 @@ export const Models: ModelPropertires[] = [
     recognizes: RecognitionTypes.OBJECTS,
     options: {
       ...sharedOptions,
-      url: 'localhost:50051',
+      url: modelUrl('YOLOV8N_GRPC_URL', 'localhost:50051'),
     },
   },
   {
@@ -43,7 +46,7 @@ export const Models: ModelPropertires[] = [
     transport: Transport.GRPC,
     options: {
       ...sharedOptions,
-      url: 'localhost:50052',
+      url: modelUrl('YOLOV5N_GRPC_URL', 'localhost:50052'),
     },
   },
   {
@@ -52,7 +55,7 @@ export const Models: ModelPropertires[] = [
     transport: Transport.GRPC,
     options: {
       ...sharedOptions,
-      url: 'localhost:50053',
+      url: modelUrl('EFFICIENTDET_GRPC_URL', 'localhost:50053'),
     },
   },
   {
@@ -61,7 +64,7 @@ export const Models: ModelPropertires[] = [
     transport: Transport.GRPC,
     options: {
       ...sharedOptions,
-      url: 'localhost:50054',
+      url: modelUrl('MOBILENET_GRPC_URL', 'localhost:50054'),
     },
   },
   {
@@ -70,7 +73,7 @@ export const Models: ModelPropertires[] = [
     transport: Transport.GRPC,
     options: {
       ...sharedOptions,
-      url: 'localhost:50062',
+      url: modelUrl('RESNET50_GRPC_URL', 'localhost:50062'),
     },
   },
   {
@@ -79,7 +82,7 @@ export const Models: ModelPropertires[] = [
     transport: Transport.GRPC,
     options: {
       ...sharedOptions,
-      url: 'localhost:50055',
+      url: modelUrl('PADDLEOCR_GRPC_URL', 'localhost:50055'),
     },
   },
   {
@@ -88,7 +91,7 @@ export const Models: ModelPropertires[] = [
     transport: Transport.GRPC,
     options: {
       ...sharedOptions,
-      url: 'localhost:50056',
+      url: modelUrl('EASYOCR_GRPC_URL', 'localhost:50056'),
     },
   },
   {
@@ -97,7 +100,7 @@ export const Models: ModelPropertires[] = [
     transport: Transport.GRPC,
     options: {
       ...sharedOptions,
-      url: 'localhost:50057',
+      url: modelUrl('TESSERACTOCR_GRPC_URL', 'localhost:50057'),
     },
   },
   {
@@ -106,7 +109,7 @@ export const Models: ModelPropertires[] = [
     transport: Transport.GRPC,
     options: {
       ...sharedOptions,
-      url: 'localhost:50058',
+      url: modelUrl('CRAFTCRNN_GRPC_URL', 'localhost:50058'),
     },
   },
   {
@@ -115,7 +118,7 @@ export const Models: ModelPropertires[] = [
     transport: Transport.GRPC,
     options: {
       ...sharedOptions,
-      url: 'localhost:50059',
+      url: modelUrl('ZBAR_GRPC_URL', 'localhost:50059'),
     },
   },
   {
@@ -124,7 +127,7 @@ export const Models: ModelPropertires[] = [
     transport: Transport.GRPC,
     options: {
       ...sharedOptions,
-      url: 'localhost:50060',
+      url: modelUrl('ZXING_GRPC_URL', 'localhost:50060'),
     },
   },
   {
@@ -133,7 +136,7 @@ export const Models: ModelPropertires[] = [
     transport: Transport.GRPC,
     options: {
       ...sharedOptions,
-      url: 'localhost:50061',
+      url: modelUrl('PYBARCODE_GRPC_URL', 'localhost:50061'),
     },
   },
 ];

@@ -1,0 +1,151 @@
+services:
+  yolo-model-service-a:
+    build:
+      context: .
+      dockerfile: docker/model-service.Dockerfile
+      args:
+        SERVICE_DIR: yolo-model-service-a
+    expose:
+      - "50051"
+
+  eco-modelo-yolov5n:
+    build:
+      context: .
+      dockerfile: docker/model-service.Dockerfile
+      args:
+        SERVICE_DIR: eco-modelo-yolov5n
+    expose:
+      - "50052"
+
+  eco-model-efficientdet:
+    build:
+      context: .
+      dockerfile: docker/model-service.Dockerfile
+      args:
+        SERVICE_DIR: eco-model-efficientdet
+    expose:
+      - "50053"
+
+  mobilenet-model-service:
+    build:
+      context: .
+      dockerfile: docker/model-service.Dockerfile
+      args:
+        SERVICE_DIR: mobilenet-model-service
+    expose:
+      - "50054"
+
+  resnet-model-service-b:
+    build:
+      context: .
+      dockerfile: docker/model-service.Dockerfile
+      args:
+        SERVICE_DIR: resnet-model-service-b
+    expose:
+      - "50062"
+
+  paddleocr-model-service:
+    build:
+      context: .
+      dockerfile: docker/model-service.Dockerfile
+      args:
+        SERVICE_DIR: paddleocr-model-service
+    expose:
+      - "50055"
+
+  easyocr-model-service:
+    build:
+      context: .
+      dockerfile: docker/model-service.Dockerfile
+      args:
+        SERVICE_DIR: easyocr-model-service
+    expose:
+      - "50056"
+
+  tesseract-model-service:
+    build:
+      context: .
+      dockerfile: docker/model-service.Dockerfile
+      args:
+        SERVICE_DIR: tesseract-model-service
+    expose:
+      - "50057"
+
+  craftcrnn-model-service:
+    build:
+      context: .
+      dockerfile: docker/model-service.Dockerfile
+      args:
+        SERVICE_DIR: craftcrnn-model-service
+    expose:
+      - "50058"
+
+  zbar-model-service:
+    build:
+      context: .
+      dockerfile: docker/model-service.Dockerfile
+      args:
+        SERVICE_DIR: zbar-model-service
+    expose:
+      - "50059"
+
+  zxing-model-service:
+    build:
+      context: .
+      dockerfile: docker/model-service.Dockerfile
+      args:
+        SERVICE_DIR: zxing-model-service
+    expose:
+      - "50060"
+
+  pybarcode-model-service:
+    build:
+      context: .
+      dockerfile: docker/model-service.Dockerfile
+      args:
+        SERVICE_DIR: pybarcode-model-service
+    expose:
+      - "50061"
+
+  eco-api:
+    build:
+      context: eco-api
+    environment:
+      PORT: 3000
+      YOLOV8N_GRPC_URL: yolo-model-service-a:50051
+      YOLOV5N_GRPC_URL: eco-modelo-yolov5n:50052
+      EFFICIENTDET_GRPC_URL: eco-model-efficientdet:50053
+      MOBILENET_GRPC_URL: mobilenet-model-service:50054
+      RESNET50_GRPC_URL: resnet-model-service-b:50062
+      PADDLEOCR_GRPC_URL: paddleocr-model-service:50055
+      EASYOCR_GRPC_URL: easyocr-model-service:50056
+      TESSERACTOCR_GRPC_URL: tesseract-model-service:50057
+      CRAFTCRNN_GRPC_URL: craftcrnn-model-service:50058
+      ZBAR_GRPC_URL: zbar-model-service:50059
+      ZXING_GRPC_URL: zxing-model-service:50060
+      PYBARCODE_GRPC_URL: pybarcode-model-service:50061
+    ports:
+      - "3000:3000"
+    depends_on:
+      - yolo-model-service-a
+      - eco-modelo-yolov5n
+      - eco-model-efficientdet
+      - mobilenet-model-service
+      - resnet-model-service-b
+      - paddleocr-model-service
+      - easyocr-model-service
+      - tesseract-model-service
+      - craftcrnn-model-service
+      - zbar-model-service
+      - zxing-model-service
+      - pybarcode-model-service
+
+  vision-evaluator:
+    build:
+      context: frontend/vision_evaluator
+      args:
+        API_BASE_URL: ${API_BASE_URL:-http://192.168.10.48:3000}
+    ports:
+      - "8080:80"
+    depends_on:
+      - eco-api

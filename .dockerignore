@@ -1,0 +1,9 @@
+**/.cache
+**/build
+**/node_modules
+**/env
+**/.dart_tool
+**/.gradle
+**/.git
+**/__pycache__
+**/*.pyc
